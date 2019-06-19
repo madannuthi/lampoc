@@ -6,6 +6,7 @@ variable "tenant_id" {}
 variable "web_rg" {}
 variable "resource_prefix" {}
 variable "web_server_name" {}
+variable "app_server_name" {}
 variable "environment" {}
 variable "web_server_count" {}
 variable "terraform_script_version" {}
@@ -35,6 +36,7 @@ module "resource_lam" {
   resource_prefix = "${var.resource_prefix}-usw"
   web_server_address_space = "10.55.0.0/22"
   web_server_name = "${var.web_server_name}"
+  app_server_name = "${var.app_server_name}"
   environment = "${var.environment}"
   web_server_count = "${var.web_server_count}"
   web_server_subnets = ["10.55.1.0/24","10.55.2.0/24"]
@@ -58,6 +60,7 @@ module "resource_lamus2" {
   resource_prefix = "${var.resource_prefix}-usw2"
   web_server_address_space = "10.56.0.0/22"
   web_server_name = "${var.web_server_name}"
+  app_server_name = "${var.app_server_name}"
   environment = "${var.environment}"
   web_server_count = "${var.web_server_count}"
   web_server_subnets = ["10.56.1.0/24","10.56.2.0/24"]
@@ -193,18 +196,18 @@ resource "azurerm_network_security_group" "jump_server_nsg" {
   resource_group_name = "${azurerm_resource_group.jump_server_rg.name}" 
 }
 
-resource "azurerm_network_security_rule" "jump_server_nsg_rule_rdp" {
-  name                        = "RDP Inbound"
-  priority                    = 100
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.jump_server_rg.name}" 
-  network_security_group_name = "${azurerm_network_security_group.jump_server_nsg.name}" 
+resource "azurerm_network_security_rule" "jump_server_nsg_rule_ssh" {
+        name                       = "SSH Inbound"
+        priority                   = 1001
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "22"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
+		resource_group_name         = "${azurerm_resource_group.jump_server_rg.name}" 
+		network_security_group_name = "${azurerm_network_security_group.jump_server_nsg.name}" 
 }
 
 resource "azurerm_virtual_machine" "jump_server" {
@@ -212,20 +215,20 @@ resource "azurerm_virtual_machine" "jump_server" {
   location                     = "${var.jump_server_location}"
   resource_group_name          = "${azurerm_resource_group.jump_server_rg.name}"  
   network_interface_ids        = ["${azurerm_network_interface.jump_server_nic.id}"]
-  vm_size                      = "Standard_B1s"
+  vm_size                      = "Standard_DS1_v2"
 
   storage_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2016-Datacenter"
-    version   = "latest"
+	   publisher = "Canonical"
+	   offer     = "UbuntuServer"
+	   sku       = "16.04-LTS"
+	   version   = "latest"
   }
 
   storage_os_disk {
-    name              = "${var.jump_server_name}-os"    
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+	   name              = "jumpbox-osdisk"
+	   caching           = "ReadWrite"
+	   create_option     = "FromImage"
+	   managed_disk_type = "Standard_LRS"
   }
   
   os_profile {
@@ -234,6 +237,7 @@ resource "azurerm_virtual_machine" "jump_server" {
     admin_password     = "Passw0rd1234"
   }
 
-  os_profile_windows_config {
-  }
+ os_profile_linux_config {
+   disable_password_authentication = false
+ }
 }

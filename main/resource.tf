@@ -4,6 +4,7 @@ variable "web_rg" {}
 variable "resource_prefix" {}
 variable "web_server_address_space" {}
 variable "web_server_name" {}
+variable "app_server_name" {}
 variable "environment" {}
 variable "web_server_count" {}
 variable "web_server_subnets" {
@@ -56,10 +57,15 @@ variable "tags" {
     tag2 = ""
   }
 }
+variable "application_port" {
+   description = "The port that you want to expose to the external load balancer"
+   default     = 80
+}
 
 
 locals {
   web_server_name   = "${var.environment == "production" ? "${var.web_server_name}-prd" : "${var.web_server_name}"}"
+  app_server_name   = "${var.environment == "production" ? "${var.app_server_name}-prd" : "${var.app_server_name}"}"
   build_environment = "${var.environment == "production" ? "production" : "development"}"
 }
 
@@ -182,6 +188,63 @@ resource "azurerm_virtual_machine_scale_set" "web_server" {
 
 }
 
+resource "azurerm_virtual_machine_scale_set" "app_server" {
+ name                         = "${var.resource_prefix}-app"
+ location                     = "${var.web_server_location}"
+ resource_group_name          = "${azurerm_resource_group.web_rg.name}"  
+ upgrade_policy_mode          = "Manual"
+
+ sku {
+   name     = "Standard_DS1_v2"
+   tier     = "Standard"
+   capacity = 2
+ }
+
+ storage_profile_image_reference {
+   publisher = "Canonical"
+   offer     = "UbuntuServer"
+   sku       = "16.04-LTS"
+   version   = "latest"
+ }
+
+ storage_profile_os_disk {
+   name              = ""
+   caching           = "ReadWrite"
+   create_option     = "FromImage"
+   managed_disk_type = "Standard_LRS"
+ }
+
+ storage_profile_data_disk {
+   lun          = 0
+   caching        = "ReadWrite"
+   create_option  = "Empty"
+   disk_size_gb   = 10
+ }
+
+ os_profile {
+   computer_name_prefix = "${local.app_server_name}"
+   admin_username       = "appserver"
+   admin_password       = "Passw0rd1234"
+   custom_data          = "${file("web.conf")}"
+ }
+
+ os_profile_linux_config {
+   disable_password_authentication = false
+ }
+
+ network_profile {
+   name    = "terraformnetworkprofile"
+   primary = true
+
+   ip_configuration {
+     name                                   = "IPConfiguration"
+     subnet_id                              = "${azurerm_subnet.web_server_subnet.*.id[0]}"
+     load_balancer_backend_address_pool_ids = ["${azurerm_lb_backend_address_pool.app_server_lb_backend_pool.id}"]
+     primary = true
+   }
+ }
+}
+
 resource "azurerm_lb" "web_server_lb" {
   name                = "${var.resource_prefix}-lb"
   location            = "${var.web_server_location}"
@@ -204,7 +267,7 @@ resource "azurerm_lb_probe" "web_server_lb_http_probe" {
   resource_group_name = "${azurerm_resource_group.web_rg.name}" 
   loadbalancer_id     = "${azurerm_lb.web_server_lb.id}" 
   protocol            = "tcp" 
-  port                = "80"
+  port                = "${var.application_port}"
 }
 
 resource "azurerm_lb_rule" "web_server_lb_http_rule" {
@@ -217,6 +280,53 @@ resource "azurerm_lb_rule" "web_server_lb_http_rule" {
   frontend_ip_configuration_name = "${var.resource_prefix}-lb-frontend-ip"
   probe_id                       = "${azurerm_lb_probe.web_server_lb_http_probe.id}"
   backend_address_pool_id        = "${azurerm_lb_backend_address_pool.web_server_lb_backend_pool.id}"
+}
+
+######## Load Balancer for Linux VMs ################
+resource "azurerm_public_ip" "app_server_lb_public_ip" {
+  name                         = "${var.resource_prefix}-app-public-ip"
+  location                     = "${var.web_server_location}"
+  resource_group_name          = "${azurerm_resource_group.web_rg.name}"
+  public_ip_address_allocation = "${var.environment == "production" ? "static" : "dynamic"}"
+  domain_name_label            = "${var.domain_name_label}"
+}
+
+resource "azurerm_lb" "applcation_lb" {
+ name                = "${var.resource_prefix}-app-lb"
+ location            = "${var.web_server_location}"
+ resource_group_name = "${azurerm_resource_group.web_rg.name}"
+
+ frontend_ip_configuration {
+   name                 = "${var.resource_prefix}-app-lb-frontend-ip"
+   public_ip_address_id = "${azurerm_public_ip.app_server_lb_public_ip.id}"
+ }
+
+}
+
+resource "azurerm_lb_backend_address_pool" "app_server_lb_backend_pool" {
+ name                = "${var.resource_prefix}-app-lb-backend-pool"
+ resource_group_name = "${azurerm_resource_group.web_rg.name}"
+ loadbalancer_id     = "${azurerm_lb.applcation_lb.id}"
+}
+
+resource "azurerm_lb_probe" "app_server_lb_backend_probe" {
+ name                = "${var.resource_prefix}-lb-app-probe"
+ resource_group_name = "${azurerm_resource_group.web_rg.name}"
+ loadbalancer_id     = "${azurerm_lb.applcation_lb.id}"
+ port                = "${var.application_port}"
+ protocol            = "tcp"
+}
+
+resource "azurerm_lb_rule" "app_server_lb_http_rule" {
+   name                           = "${var.resource_prefix}-app-lb-http-rule"
+   resource_group_name = "${azurerm_resource_group.web_rg.name}"
+   loadbalancer_id     = "${azurerm_lb.applcation_lb.id}"
+   protocol                       = "Tcp"
+   frontend_port                  = "${var.application_port}"
+   backend_port                   = "${var.application_port}"
+   backend_address_pool_id        = "${azurerm_lb_backend_address_pool.app_server_lb_backend_pool.id}"
+   frontend_ip_configuration_name = "${var.resource_prefix}-app-lb-frontend-ip"
+   probe_id                       = "${azurerm_lb_probe.app_server_lb_backend_probe.id}"
 }
 
 resource "azurerm_sql_database" "db" {

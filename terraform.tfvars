@@ -2,6 +2,7 @@ web_rg = "lam-poc-rg"
 resource_prefix = "lam-poc"
 web_server_address_prefix = "10.55.1.0/24"
 web_server_name = "lam-poc"
+app_server_name = "lam-unix"
 environment = "poc"
 web_server_count          = 2
 terraform_script_version  = "1.08"
