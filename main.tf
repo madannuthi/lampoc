@@ -11,6 +11,7 @@ variable "environment" {}
 variable "web_server_count" {}
 variable "terraform_script_version" {}
 variable "domain_name_label" {}
+variable "domain_name_app_label" {}
 variable "db_name" {}
 variable "sql_admin_username" {}
 variable "sql_password" {}
@@ -41,6 +42,7 @@ module "resource_lam" {
   web_server_count = "${var.web_server_count}"
   web_server_subnets = ["10.55.1.0/24","10.55.2.0/24"]
   domain_name_label = "${var.domain_name_label}"
+  domain_name_app_label = "${var.domain_name_app_label}"
   terraform_script_version = "${var.terraform_script_version}"
   db_location            = "${var.db_location}"
   db_name             = "${var.db_name}-usw"
@@ -65,8 +67,9 @@ module "resource_lamus2" {
   web_server_count = "${var.web_server_count}"
   web_server_subnets = ["10.56.1.0/24","10.56.2.0/24"]
   domain_name_label = "${var.domain_name_label}"
+  domain_name_app_label = "${var.domain_name_app_label}"
   terraform_script_version = "${var.terraform_script_version}"
-  db_location         = "${var.db_location}"
+  db_location         = "${var.db_location}2"
   db_name             = "${var.db_name}2"
   sql_admin_username  = "${var.sql_admin_username}"
   sql_password        = "${var.sql_password}"

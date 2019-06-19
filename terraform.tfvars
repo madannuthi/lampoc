@@ -7,6 +7,7 @@ environment = "poc"
 web_server_count          = 2
 terraform_script_version  = "1.08"
 domain_name_label  = "lam-poc-web"
+domain_name_app_label  = "lam-poc-app"
 tenant_id       = "918079db-c902-4e29-b22c-9764410d0375"
 subscription_id = "93b8bab5-e84d-40cb-949d-c1977eaf6f59"
 client_id       = "7c4a040f-09e0-4963-ace4-c988b170acfd"

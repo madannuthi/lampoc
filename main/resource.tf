@@ -12,6 +12,7 @@ variable "web_server_subnets" {
 }
 variable "terraform_script_version" {}
 variable "domain_name_label" {}
+variable "domain_name_app_label" {}
 
 variable "db_location" {}
 
@@ -101,6 +102,14 @@ resource "azurerm_public_ip" "web_server_lb_public_ip" {
   resource_group_name          = "${azurerm_resource_group.web_rg.name}"
   public_ip_address_allocation = "${var.environment == "production" ? "static" : "dynamic"}"
   domain_name_label            = "${var.domain_name_label}"
+}
+
+resource "azurerm_public_ip" "app_server_lb_public_ip" {
+  name                         = "${var.resource_prefix}-app-public-ip"
+  location                     = "${var.web_server_location}"
+  resource_group_name          = "${azurerm_resource_group.web_rg.name}"
+  public_ip_address_allocation = "${var.environment == "production" ? "static" : "dynamic"}"
+  domain_name_label            = "${var.domain_name_app_label}"
 }
 
 resource "azurerm_network_security_group" "web_server_nsg" {
@@ -283,14 +292,6 @@ resource "azurerm_lb_rule" "web_server_lb_http_rule" {
 }
 
 ######## Load Balancer for Linux VMs ################
-resource "azurerm_public_ip" "app_server_lb_public_ip" {
-  name                         = "${var.resource_prefix}-app-public-ip"
-  location                     = "${var.web_server_location}"
-  resource_group_name          = "${azurerm_resource_group.web_rg.name}"
-  public_ip_address_allocation = "${var.environment == "production" ? "static" : "dynamic"}"
-  domain_name_label            = "${var.domain_name_label}"
-}
-
 resource "azurerm_lb" "applcation_lb" {
  name                = "${var.resource_prefix}-app-lb"
  location            = "${var.web_server_location}"
@@ -331,7 +332,7 @@ resource "azurerm_lb_rule" "app_server_lb_http_rule" {
 
 resource "azurerm_sql_database" "db" {
   name                             = "${var.resource_prefix}-mysql-db"
-  location            			       = "${var.db_location}"
+  location            			   = "${var.db_location}"
   resource_group_name              = "${azurerm_resource_group.web_rg.name}"
   edition                          = "${var.db_edition}"
   collation                        = "${var.collation}"
