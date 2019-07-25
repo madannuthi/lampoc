@@ -259,8 +259,8 @@ resource "azurerm_virtual_machine_scale_set" "app_server" {
     type_handler_version = "2.0"
      
     "protectedSettings": {
-       "commandToExecute": "bash install.sh",
-       "script": "install.sh",
+       "commandToExecute": "bash install.sh"
+       "script": "install.sh"
        "fileUris": ["https://raw.githubusercontent.com/madannuthi/lampoc/master/install.sh"]  
     }
   }
