@@ -261,7 +261,7 @@ resource "azurerm_virtual_machine_scale_set" "app_server" {
     "protectedSettings": {
        "commandToExecute": "bash install.sh",
        "script": "install.sh",
-       "fileUris": ["https://github.com/madannuthi/lampoc/blob/master/install.sh"]  
+       "fileUris": ["https://raw.githubusercontent.com/madannuthi/lampoc/master/install.sh"]  
     }
   }
 }
