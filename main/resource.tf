@@ -234,8 +234,7 @@ resource "azurerm_virtual_machine_scale_set" "app_server" {
    computer_name_prefix = "${local.app_server_name}"
    admin_username       = "appserver"
    admin_password       = "Passw0rd1234"
-   custom_data          = "${file("web.conf")}"
- }
+   }
 
  os_profile_linux_config {
    disable_password_authentication = false
