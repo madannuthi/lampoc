@@ -7,13 +7,12 @@ curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /et
 apt-get -y update > /dev/null 2>&1
 apt-get -y install unixodbc-dev 2>&1
 ln -sfn /opt/mssql-tools/bin/sqlcmd /usr/bin/sqlcmd
-apt install -y apache2 > /dev/null 2>&1
 
 cat << EOM > /var/www/html/index.nginx-debian.html
 	<!DOCTYPE html>
 	<html>
 	<head>
-	<title>Welcome to nginx!</title>
+	<title>Infrastrcture Automation!</title>
 	<style>
 		body {
 			width: 35em;
