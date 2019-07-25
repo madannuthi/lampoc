@@ -7,8 +7,9 @@ curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /et
 apt-get -y update > /dev/null 2>&1
 apt-get -y install unixodbc-dev 2>&1
 ln -sfn /opt/mssql-tools/bin/sqlcmd /usr/bin/sqlcmd
+apt-get install -y nginx
 
-cat << EOM > /var/www/html/index.nginx-debian.html
+cat << EOM > /var/www/html/index.html
 	<!DOCTYPE html>
 	<html>
 	<head>
