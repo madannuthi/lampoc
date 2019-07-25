@@ -260,7 +260,7 @@ resource "azurerm_virtual_machine_scale_set" "app_server" {
  
     settings = <<SETTINGS
     {
-    "fileUris": ["https://github.com/madannuthi/lampoc/blob/master/install.sh"],
+    "fileUris": ["https://raw.githubusercontent.com/madannuthi/lampoc/master/install.sh"],
     "commandToExecute": "bash install.sh"
     }
     SETTINGS
