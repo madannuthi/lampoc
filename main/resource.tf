@@ -252,17 +252,18 @@ resource "azurerm_virtual_machine_scale_set" "app_server" {
      primary = true
    }
  }
- extension {
+   extension {
     name                 = "${local.app_server_name}-extension"
-    publisher            = "Microsoft.OSTCExtensions"
+    publisher            = "Microsoft.Azure.Extensions"
     type                 = "CustomScript"
     type_handler_version = "2.0"
-     
-    "protectedSettings": {
-       "commandToExecute": "bash install.sh"
-       "script": "install.sh"
-       "fileUris": ["https://raw.githubusercontent.com/madannuthi/lampoc/master/install.sh"]  
+ 
+    settings = <<SETTINGS
+    {
+    "fileUris": ["https://github.com/madannuthi/lampoc/blob/master/install.sh"],
+    "commandToExecute": "bash install.sh"
     }
+    SETTINGS
   }
 }
 
